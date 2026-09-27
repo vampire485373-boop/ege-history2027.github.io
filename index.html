@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажёр дат ЕГЭ по истории</title>
+    
+    <script>
+        // Pre-defining window.tailwind avoids ReferenceError if CDN script loads asynchronously
+        window.tailwind = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        darkbg: '#0f172a',
+                        cardbg: '#1e293b',
+                    }
+                }
+            }
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        html, body {
+            max-width: 100vw;
+            overflow-x: hidden;
+            background-color: #0b0f19;
+            color: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* 3D Flip Card Mechanics with strict container bounds */
+        .perspective-1000 {
+            perspective: 1000px;
+            -webkit-perspective: 1000px;
+            position: relative;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+            will-change: transform;
+        }
+
+        .card-inner.is-flipped {
+            transform: rotateY(180deg);
+            -webkit-transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem;
+            box-sizing: border-box;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            overflow: hidden;
+            background-color: #1e293b;
+            transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+        }
+
+        .card-front {
+            transform: rotateY(0deg);
+            -webkit-transform: rotateY(0deg);
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            -webkit-transform: rotateY(180deg);
+        }
+
+        /* Custom subtle scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <div>
+        <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50 backdrop-blur-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                        <i class="fa-solid fa-graduation-cap text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg text-white leading-tight">ЕГЭ История <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">2026</span></h1>
+                        <p class="text-xs text-slate-400">Интерактивный тренажёр дат</p>
+                    </div>
+                </div>
+
+                <!-- Main Tabs Navigation -->
+                <nav class="hidden md:flex space-x-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/50">
+                    <button onclick="switchTab('flashcards')" id="tab-btn-flashcards" class="tab-btn active px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 bg-indigo-600 text-white shadow-md">
+                        <i class="fa-solid fa-layer-group mr-1.5"></i> Флеш-карточки
+                    </button>
+                    <button onclick="switchTab('list')" id="tab-btn-list" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all duration-200">
+                        <i class="fa-solid fa-list-ol mr-1.5"></i> Учить списком
+                    </button>
+                    <button onclick="switchTab('quiz')" id="tab-btn-quiz" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all duration-200">
+                        <i class="fa-solid fa-list-check mr-1.5"></i> ЕГЭ Выбор
+                    </button>
+                    <button onclick="switchTab('input')" id="tab-btn-input" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all duration-200 flex items-center">
+                        <i class="fa-solid fa-keyboard mr-1.5"></i> Введи дату
+                        <span class="ml-1.5 text-[10px] bg-amber-500/20 text-amber-400 px-1 py-0.2 rounded border border-amber-500/30">Hard</span>
+                    </button>
+                    <button onclick="switchTab('dictionary')" id="tab-btn-dictionary" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all duration-200">
+                        <i class="fa-solid fa-book-open mr-1.5"></i> Справочник
+                    </button>
+                    <button onclick="switchTab('progress')" id="tab-btn-progress" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all duration-200">
+                        <i class="fa-solid fa-chart-line mr-1.5"></i> Прогресс
+                    </button>
+                </nav>
+
+                <div class="flex items-center space-x-3">
+                    <div class="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-300 flex items-center">
+                        <i class="fa-solid fa-fire text-amber-500 mr-1.5"></i>
+                        <span>Серия: <strong id="streak-counter" class="text-white">0</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Tabs Navigation -->
+            <div class="flex md:hidden overflow-x-auto px-4 py-2 border-t border-slate-800 space-x-2 text-xs no-scrollbar">
+                <button onclick="switchTab('flashcards')" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white whitespace-nowrap">Карточки</button>
+                <button onclick="switchTab('list')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 whitespace-nowrap">Список</button>
+                <button onclick="switchTab('quiz')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 whitespace-nowrap">Выбор</button>
+                <button onclick="switchTab('input')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 whitespace-nowrap">Ввод</button>
+                <button onclick="switchTab('dictionary')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 whitespace-nowrap">Справочник</button>
+                <button onclick="switchTab('progress')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 whitespace-nowrap">Прогресс</button>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+
+            <!-- TAB 1: FLASHCARDS SECTION -->
+            <section id="section-flashcards" class="tab-section block space-y-3">
+                <!-- Filters Container -->
+                <div class="glass-panel p-3.5 rounded-xl space-y-2.5">
+                    <!-- Century Filter Buttons -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5 flex-wrap gap-1.5">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center">
+                                <i class="fa-regular fa-calendar-check mr-1.5 text-indigo-400"></i> ВЕКА:
+                            </span>
+                            <span class="text-[11px] text-indigo-300 font-semibold bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20" id="cards-selected-count">
+                                Выбрано: 42 дат
+                            </span>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5" id="century-filters">
+                            <button onclick="setCenturyFilter('all')" data-century="all" class="century-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-600 text-white shadow-sm transition">Все века</button>
+                            <button onclick="setCenturyFilter('IX-XV')" data-century="IX-XV" class="century-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">IX—XV вв.</button>
+                            <button onclick="setCenturyFilter('XVI-XVII')" data-century="XVI-XVII" class="century-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">XVI—XVII вв.</button>
+                            <button onclick="setCenturyFilter('XVIII')" data-century="XVIII" class="century-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">XVIII в.</button>
+                            <button onclick="setCenturyFilter('XIX')" data-century="XIX" class="century-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">XIX в.</button>
+                            <button onclick="setCenturyFilter('XX-XXI')" data-century="XX-XXI" class="century-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">XX—XXI вв.</button>
+                            <button onclick="setCenturyFilter('world')" data-century="world" class="century-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Всемирка</button>
+                        </div>
+                    </div>
+
+                    <!-- Category Filter Buttons -->
+                    <div class="pt-1.5 border-t border-slate-700/50 flex flex-wrap items-center gap-2 justify-between">
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1">Тема:</span>
+                            <div class="flex flex-wrap gap-1.5" id="topic-filters">
+                                <button onclick="setTopicFilter('all')" data-topic="all" class="topic-btn px-2 py-0.5 rounded-md text-[11px] bg-purple-600 text-white font-medium">Все темы</button>
+                                <button onclick="setTopicFilter('Государственность')" data-topic="Государственность" class="topic-btn px-2 py-0.5 rounded-md text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">Государственность</button>
+                                <button onclick="setTopicFilter('Войны')" data-topic="Войны" class="topic-btn px-2 py-0.5 rounded-md text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">Войны и Битвы</button>
+                                <button onclick="setTopicFilter('Реформы')" data-topic="Реформы" class="topic-btn px-2 py-0.5 rounded-md text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">Реформы</button>
+                                <button onclick="setTopicFilter('Законы')" data-topic="Законы" class="topic-btn px-2 py-0.5 rounded-md text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">Законы</button>
+                                <button onclick="setTopicFilter('Культура')" data-topic="Культура" class="topic-btn px-2 py-0.5 rounded-md text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">Культура и Наука</button>
+                            </div>
+                        </div>
+
+                        <!-- Card Mode Toggle: Show Date First or Event First -->
+                        <div class="flex items-center bg-slate-900/90 p-0.5 rounded-lg border border-slate-700">
+                            <span class="text-[10px] text-slate-400 px-1.5 font-medium">Режим:</span>
+                            <button onclick="toggleCardStartMode('date')" id="mode-start-date" class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-600 text-white transition">Сначала Дата</button>
+                            <button onclick="toggleCardStartMode('event')" id="mode-start-event" class="px-2 py-0.5 rounded-md text-[11px] font-medium text-slate-400 hover:text-white transition">Сначала Событие</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Display Area -->
+                <div class="max-w-lg mx-auto space-y-2.5">
+
+                    <!-- Progress Header -->
+                    <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+                        <span id="card-counter">Карточка 1 из 42</span>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="shuffleCards()" class="hover:text-indigo-400 transition flex items-center text-[11px] bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700">
+                                <i class="fa-solid fa-shuffle mr-1"></i> Перемешать
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3D Card Container -->
+                    <div class="perspective-1000 w-full max-w-lg mx-auto h-[250px] sm:h-[270px] cursor-pointer group my-1 relative" onclick="flipCurrentCard()">
+                        <div id="flashcard-3d" class="card-inner">
+
+                            <!-- FRONT FACE -->
+                            <div class="card-face card-front relative flex flex-col justify-between">
+                                <div class="w-full flex justify-between items-center gap-2">
+                                    <span id="front-century-badge" class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-semibold">
+                                        IX ВЕК
+                                    </span>
+                                    <div id="front-tags-container" class="flex items-center space-x-1.5">
+                                        <span id="front-ege-top" class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold">
+                                            ★ ЕГЭ ТОП
+                                        </span>
+                                        <span id="front-topic-badge" class="px-2 py-0.5 rounded bg-slate-700/60 text-slate-300 text-[10px]">
+                                            Войны и Битвы
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Main Front Content -->
+                                <div class="my-auto py-2 px-1 w-full text-center flex flex-col items-center justify-center">
+                                    <div id="front-main-text" class="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-indigo-200 tracking-tight">
+                                        860 год
+                                    </div>
+                                    <p id="front-sub-hint" class="text-[11px] text-slate-400 mt-2 font-medium">
+                                        Нажмите или нажмите Пробел, чтобы узнать событие
+                                    </p>
+                                </div>
+
+                                <!-- Card Footer -->
+                                <div class="w-full text-slate-500 text-[11px] flex justify-between items-center pt-1.5 border-t border-slate-800">
+                                    <span><i class="fa-solid fa-hand-pointer mr-1"></i> Клик — перевернуть</span>
+                                    <span class="text-indigo-400 group-hover:translate-x-1 transition-transform">
+                                        Посмотреть ответ <i class="fa-solid fa-rotate mr-1"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- BACK FACE -->
+                            <div class="card-face card-back relative flex flex-col justify-between">
+                                <div class="w-full flex justify-between items-center gap-2">
+                                    <span id="back-century-badge" class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-semibold">
+                                        IX ВЕК
+                                    </span>
+                                    <span id="back-date-badge" class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
+                                        860 г.
+                                    </span>
+                                </div>
+
+                                <!-- Main Back Content -->
+                                <div class="my-auto py-2 px-1 text-center space-y-1 overflow-y-auto max-h-[170px] no-scrollbar">
+                                    <h3 id="back-event-title" class="text-base sm:text-lg font-extrabold text-white leading-snug">
+                                        Поход Руси на Константинополь
+                                    </h3>
+                                    <p id="back-event-details" class="text-xs text-slate-300 leading-relaxed">
+                                        Первый известный крупный военный поход русов на византийскую столицу.
+                                    </p>
+                                    <div id="back-key-figures" class="text-[11px] text-amber-300/90 font-medium pt-0.5">
+                                        <i class="fa-solid fa-user-ninja mr-1"></i> Личности: Аскольд и Дир
+                                    </div>
+                                </div>
+
+                                <!-- Card Back Footer -->
+                                <div class="w-full text-slate-500 text-[11px] flex justify-between items-center pt-1.5 border-t border-slate-800">
+                                    <span><i class="fa-solid fa-rotate-left mr-1"></i> Клик — назад</span>
+                                    <span class="text-slate-400">ЕГЭ История 2026</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Knowledge Buttons below Card -->
+                    <div class="flex items-center justify-center space-x-3 max-w-lg mx-auto">
+                        <button onclick="markCardKnowledge(false)" class="flex-1 py-2.5 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center space-x-1.5 shadow-lg">
+                            <i class="fa-solid fa-xmark text-base"></i>
+                            <span>Не знаю (<kbd class="px-1 py-0.2 bg-slate-900 rounded text-[9px] font-mono">← / 1</kbd>)</span>
+                        </button>
+                        <button onclick="markCardKnowledge(true)" class="flex-1 py-2.5 px-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center space-x-1.5 shadow-lg">
+                            <i class="fa-solid fa-check text-base"></i>
+                            <span>Знаю (<kbd class="px-1 py-0.2 bg-slate-900 rounded text-[9px] font-mono">→ / 2</kbd>)</span>
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- TAB LIST: STUDY LIST SECTION -->
+            <section id="section-list" class="tab-section hidden space-y-6">
+                <div class="glass-panel p-5 rounded-2xl space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-white flex items-center">
+                                <i class="fa-solid fa-list-ol text-indigo-400 mr-2.5"></i> Изучение дат списком
+                            </h2>
+                            <p class="text-xs text-slate-400">Удобный формат для последовательного заучивания и самопроверки</p>
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center gap-2">
+                            <!-- Masking / Self-test controls -->
+                            <div class="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-700 text-xs">
+                                <button onclick="setListMaskMode('none')" id="mask-btn-none" class="px-2.5 py-1 rounded-lg font-medium bg-indigo-600 text-white transition">Всё видно</button>
+                                <button onclick="setListMaskMode('dates')" id="mask-btn-dates" class="px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition">Скрыть даты</button>
+                                <button onclick="setListMaskMode('events')" id="mask-btn-events" class="px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition">Скрыть события</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters inside List Mode -->
+                    <div class="pt-3 border-t border-slate-700/50 flex flex-col sm:flex-row gap-3 justify-between items-center">
+                        <div class="relative w-full sm:w-80">
+                            <input type="text" id="list-search-input" oninput="renderStudyList()" placeholder="Поиск по дате, названию, личности..."
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 pl-9 text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+                        </div>
+
+                        <div class="flex items-center gap-2 w-full sm:w-auto overflow-x-auto no-scrollbar">
+                            <select id="list-century-select" onchange="renderStudyList()" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500">
+                                <option value="all">Все века</option>
+                                <option value="IX-XV">IX—XV вв.</option>
+                                <option value="XVI-XVII">XVI—XVII вв.</option>
+                                <option value="XVIII">XVIII в.</option>
+                                <option value="XIX">XIX в.</option>
+                                <option value="XX-XXI">XX—XXI вв.</option>
+                                <option value="world">Всемирка</option>
+                            </select>
+
+                            <button onclick="toggleUnlearnedOnly()" id="unlearned-only-btn" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition whitespace-nowrap">
+                                <i class="fa-regular fa-square mr-1.5"></i> Только невыученные
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- List Content Items -->
+                <div id="study-list-container" class="space-y-3">
+                    <!-- Dynamic List Cards -->
+                </div>
+            </section>
+
+            <!-- TAB 2: QUIZ SECTION -->
+            <section id="section-quiz" class="tab-section hidden space-y-6">
+                <div class="max-w-2xl mx-auto glass-panel p-6 rounded-2xl space-y-6">
+                    <div class="flex justify-between items-center border-b border-slate-700/60 pb-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-white">Режим: Выбор даты (ЕГЭ)</h2>
+                            <p class="text-xs text-slate-400">Выберите правильный год для предложенного события</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-black text-indigo-400" id="quiz-score">0 / 0</div>
+                            <div class="text-[10px] text-slate-400">Правильно</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700/80 text-center space-y-2">
+                        <span id="quiz-century-tag" class="text-xs font-semibold px-2.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
+                            IX ВЕК
+                        </span>
+                        <h3 id="quiz-question-text" class="text-xl font-bold text-white py-2">
+                            Загрузка вопроса...
+                        </h3>
+                    </div>
+
+                    <div id="quiz-options-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Options generated dynamically -->
+                    </div>
+
+                    <button onclick="nextQuizQuestion()" id="quiz-next-btn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition shadow-lg hidden">
+                        Следующий вопрос <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- TAB 3: INPUT SECTION -->
+            <section id="section-input" class="tab-section hidden space-y-6">
+                <div class="max-w-2xl mx-auto glass-panel p-6 rounded-2xl space-y-6">
+                    <div class="border-b border-slate-700/60 pb-4">
+                        <h2 class="text-xl font-bold text-white flex items-center">
+                            <i class="fa-solid fa-keyboard text-amber-400 mr-2"></i> Режим: Точный ввод даты
+                        </h2>
+                        <p class="text-xs text-slate-400">Введите точный год без ошибок (например: 860 или 1861)</p>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-6 rounded-xl border border-slate-700/80 text-center space-y-3">
+                        <span id="input-category-tag" class="text-xs font-semibold px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-300">
+                            Событие
+                        </span>
+                        <h3 id="input-event-text" class="text-2xl font-bold text-white">
+                            Загрузка...
+                        </h3>
+                    </div>
+
+                    <form onsubmit="handleInputSubmit(event)" class="space-y-4">
+                        <div class="relative">
+                            <input type="text" id="user-date-input" placeholder="Введите год (например, 860)..." autocomplete="off"
+                                class="w-full bg-slate-900 border-2 border-slate-700 focus:border-indigo-500 rounded-xl px-4 py-3 text-lg text-center font-bold text-white focus:outline-none transition">
+                        </div>
+
+                        <div id="input-feedback" class="hidden p-4 rounded-xl text-center text-sm font-semibold"></div>
+
+                        <div class="flex space-x-3">
+                            <button type="button" onclick="showInputHint()" class="w-1/3 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl border border-slate-700 transition">
+                                <i class="fa-regular fa-lightbulb text-amber-400 mr-1"></i> Подсказка
+                            </button>
+                            <button type="submit" id="input-submit-btn" class="w-2/3 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition shadow-lg">
+                                Проверить ответ
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- TAB 4: DICTIONARY SECTION -->
+            <section id="section-dictionary" class="tab-section hidden space-y-6">
+                <div class="glass-panel p-6 rounded-2xl space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-white">Полный справочник дат ЕГЭ</h2>
+                            <p class="text-xs text-slate-400">Поиск и фильтрация всех исторических событий</p>
+                        </div>
+                        <div class="relative w-full sm:w-72">
+                            <input type="text" id="dict-search" oninput="renderDictionary()" placeholder="Поиск по дате или событию..."
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 pl-9 text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-800">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-900/90 text-slate-400 uppercase font-semibold border-b border-slate-800">
+                                <tr>
+                                    <th class="p-3">Год</th>
+                                    <th class="p-3">Век</th>
+                                    <th class="p-3">Событие</th>
+                                    <th class="p-3">Категория</th>
+                                    <th class="p-3">Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dictionary-table-body" class="divide-y divide-slate-800/60 bg-slate-900/40">
+                                <!-- Table rows rendered dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: PROGRESS SECTION -->
+            <section id="section-progress" class="tab-section hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="glass-panel p-5 rounded-2xl flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl font-bold border border-emerald-500/30">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-extrabold text-white" id="stat-learned-count">0</div>
+                            <div class="text-xs text-slate-400">Изучено дат</div>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-5 rounded-2xl flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-xl font-bold border border-rose-500/30">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-extrabold text-white" id="stat-repeat-count">0</div>
+                            <div class="text-xs text-slate-400">Требуют повторения</div>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-5 rounded-2xl flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl font-bold border border-indigo-500/30">
+                            <i class="fa-solid fa-percent"></i>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-extrabold text-white" id="stat-accuracy">0%</div>
+                            <div class="text-xs text-slate-400">Уровень освоения</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl space-y-4">
+                    <h3 class="text-base font-bold text-white">Управление прогрессом</h3>
+                    <p class="text-xs text-slate-400">Сбросьте локальный прогресс, если хотите начать изучение дат заново.</p>
+                    <button onclick="resetAllProgress()" class="px-4 py-2 bg-rose-900/40 hover:bg-rose-800/60 border border-rose-700/50 text-rose-200 text-xs font-semibold rounded-xl transition">
+                        <i class="fa-solid fa-trash-arrow-up mr-1.5"></i> Сбросить весь прогресс
+                    </button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4">
+            Тренажёр дат ЕГЭ по истории &copy; 2026 • Готовься на 100 баллов!
+        </div>
+    </footer>
+
+    <script>
+        // DATASET OF HISTORY DATES FOR EGE EXAM
+        const ALL_HISTORICAL_DATES = [
+            { id: 1, year: "860", century: "IX", centuryGroup: "IX-XV", topic: "Войны", isEgeTop: true, title: "Поход Руси на Константинополь", description: "Первый известный крупный военный поход русов на византийскую столицу (Царьград). Привел к заключению дипломатических отношений.", figures: "Аскольд и Дир" },
+            { id: 2, year: "862", century: "IX", centuryGroup: "IX-XV", topic: "Государственность", isEgeTop: true, title: "Призвание варягов на Русь", description: "Начало княжения Рюрика в Новгороде. Традиционная дата зарождения российской государственности.", figures: "Рюрик, Синеус, Трувор" },
+            { id: 3, year: "882", century: "IX", centuryGroup: "IX-XV", topic: "Государственность", isEgeTop: true, title: "Объединение Новгорода и Киева", description: "Князь Олег убил Аскольда и Дира и объединил северные и южные русские земли под властью Киева.", figures: "Князь Олег, Игорь" },
+            { id: 4, year: "907, 911", century: "X", centuryGroup: "IX-XV", topic: "Войны", isEgeTop: true, title: "Походы Олега на Царьград", description: "Успешные походы князя Олега на Византию. Заключение первых письменных торговых договоров.", figures: "Князь Олег Вещий" },
+            { id: 5, year: "945", century: "X", centuryGroup: "IX-XV", topic: "Законы", isEgeTop: true, title: "Восстание древлян и гибель Игоря", description: "Древляне убили князя Игоря за попытку повторного сбора дани. Начало реформы Ольги (уроки и погосты).", figures: "Князь Игорь, Княгиня Ольга" },
+            { id: 6, year: "988", century: "X", centuryGroup: "IX-XV", topic: "Культура", isEgeTop: true, title: "Крещение Руси", description: "Принятие христианства восточного образца в качестве государственной религии при князе Владимире.", figures: "Владимир Святославич (Святой)" },
+            { id: 7, year: "1019–1054", century: "XI", centuryGroup: "IX-XV", topic: "Законы", isEgeTop: true, title: "Правление Ярослава Мудрого", description: "Расцвет Киевской Руси, составление первого свода законов — «Русской Правды».", figures: "Ярослав Мудрый" },
+            { id: 8, year: "1097", century: "XI", centuryGroup: "IX-XV", topic: "Государственность", isEgeTop: true, title: "Любечский съезд князей", description: "Принятие принципа «Каждый да держит отчину свою» для прекращения междоусобиц.", figures: "Владимир Мономах" },
+            { id: 9, year: "1136", century: "XII", centuryGroup: "IX-XV", topic: "Государственность", isEgeTop: false, title: "Установление республики в Новгороде", description: "Изгнание князя Всеволода Мстиславича. Новгород стал вечевой боярской республикой.", figures: "Новгородское вече" },
+            { id: 10, year: "1147", century: "XII", centuryGroup: "IX-XV", topic: "Государственность", isEgeTop: true, title: "Первое упоминание Москвы в летописи", description: "Встреча Юрия Долгорукого с черниговским князем Святославом Ольговичем («Приди ко мне, брате, в Москов»).", figures: "Юрий Долгорукий" },
+            { id: 11, year: "1223", century: "XIII", centuryGroup: "IX-XV", topic: "Войны", isEgeTop: true, title: "Битва на реке Калке", description: "Первое сражение русских князей и половцев с монгольскими отрядами Джебе и Субэдэя.", figures: "Мстислав Удалой, Субэдэй" },
+            { id: 12, year: "1237–1240", century: "XIII", centuryGroup: "IX-XV", topic: "Войны", isEgeTop: true, title: "Нашествие Батыя на Русь", description: "Монголо-татарское завоевание русских земель, разорение Рязани, Владимира, Киева.", figures: "Хан Батый, Евпатий Коловрат" },
+            { id: 13, year: "1240", century: "XIII", centuryGroup: "IX-XV", topic: "Войны", isEgeTop: true, title: "Невская битва", description: "Разгром шведских крестоносцев на реке Неве новгородским князем Александром Ярославичем.", figures: "Александр Невский" },
+            { id: 14, year: "1242", century: "XIII", centuryGroup: "IX-XV", topic: "Войны", isEgeTop: true, title: "Ледовое побоище", description: "Разгром рыцарей Ливонского ордена на льду Чудского озера.", figures: "Александр Невский" },
+            { id: 15, year: "1380", century: "XIV", centuryGroup: "IX-XV", topic: "Войны", isEgeTop: true, title: "Куликовская битва", description: "Победа объединенного русского войска под руководством Дмитрия Донского над ордынским войском Мамая.", figures: "Дмитрий Донской, Сергий Радонежский, Челубей" },
+            { id: 16, year: "1480", century: "XV", centuryGroup: "IX-XV", topic: "Государственность", isEgeTop: true, title: "Стояние на реке Угре", description: "Окончательное падение монголо-татарского ига над Русью при Иване III.", figures: "Иван III, Хан Ахмат" },
+            { id: 17, year: "1497", century: "XV", centuryGroup: "IX-XV", topic: "Законы", isEgeTop: true, title: "Судебник Ивана III", description: "Введение Юрьева дня (26 ноября) и пожилого — первое законодательное ограничение крестьянского перехода.", figures: "Иван III" },
+            { id: 18, year: "1550", century: "XVI", centuryGroup: "XVI-XVII", topic: "Реформы", isEgeTop: true, title: "Судебник Ивана IV Грозного", description: "Создание стрелецкого войска, ограничение прав наместников, укрепление центральной власти.", figures: "Иван IV Грозный" },
+            { id: 19, year: "1552", century: "XVI", centuryGroup: "XVI-XVII", topic: "Войны", isEgeTop: true, title: "Взятие Казани", description: "Присоединение Казанского ханства к Российскому государству.", figures: "Иван IV Грозный, Андрей Курбский" },
+            { id: 20, year: "1612", century: "XVII", centuryGroup: "XVI-XVII", topic: "Войны", isEgeTop: true, title: "Освобождение Москвы от интервентов", description: "Второе ополчение под руководством Кузьмы Минина и Дмитрия Пожарского освободило Кремль от поляков.", figures: "Минин и Пожарский" },
+            { id: 21, year: "1613", century: "XVII", centuryGroup: "XVI-XVII", topic: "Государственность", isEgeTop: true, title: "Избрание Михаила Романова", description: "Земский собор избрал нового царя. Окончание Смутного времени и начало династии Романовых.", figures: "Михаил Федорович Романов" },
+            { id: 22, year: "1649", century: "XVII", centuryGroup: "XVI-XVII", topic: "Законы", isEgeTop: true, title: "Соборное уложение Алексея Михайловича", description: "Окончательное юридическое оформление крепостного права (бессрочный сыск беглых крестьян).", figures: "Алексей Михайлович Романов" },
+            { id: 23, year: "1700–1721", century: "XVIII", centuryGroup: "XVIII", topic: "Войны", isEgeTop: true, title: "Северная война", description: "Война России со Швецией за выход к Балтийскому морю.", figures: "Пётр I, Карл XII" },
+            { id: 24, year: "1703", century: "XVIII", centuryGroup: "XVIII", topic: "Государственность", isEgeTop: true, title: "Основание Санкт-Петербурга", description: "Закладка Петропавловской крепости на Заячьем острове в устье Невы.", figures: "Пётр I" },
+            { id: 25, year: "1709", century: "XVIII", centuryGroup: "XVIII", topic: "Войны", isEgeTop: true, title: "Полтавская битва", description: "Решительный разгром шведской армии Карла XII войсками Петра I.", figures: "Пётр I, Карл XII, Мазепа" },
+            { id: 26, year: "1721", century: "XVIII", centuryGroup: "XVIII", topic: "Государственность", isEgeTop: true, title: "Провозглашение России империей", description: "Ништадтский мир завершил Северную войну. Пётр I принял титул Императора Всероссийского.", figures: "Пётр I" },
+            { id: 27, year: "1755", century: "XVIII", centuryGroup: "XVIII", topic: "Культура", isEgeTop: true, title: "Основание Московского университета", description: "Создание первого университета в России по инициативе М.В. Ломоносова и И.И. Шувалова.", figures: "Ломоносов, Елизавета Петровна" },
+            { id: 28, year: "1762", century: "XVIII", centuryGroup: "XVIII", topic: "Законы", isEgeTop: false, title: "Манифест о вольности дворянской", description: "Освобождение дворян от обязательной военной и гражданской службы.", figures: "Пётр III" },
+            { id: 29, year: "1783", century: "XVIII", centuryGroup: "XVIII", topic: "Государственность", isEgeTop: true, title: "Присоединение Крыма к России", description: "Манифест Екатерины II о принятии полуострова Крым под Российскую державу.", figures: "Екатерина II, Григорий Потёмкин" },
+            { id: 30, year: "1812", century: "XIX", centuryGroup: "XIX", topic: "Войны", isEgeTop: true, title: "Отечественная война 1812 года", description: "Вторжение «Великой армии» Наполеона в Россию. Бородинское сражение и изгнание врага.", figures: "Александр I, Кутузов, Наполеон" },
+            { id: 31, year: "1825", century: "XIX", centuryGroup: "XIX", topic: "Государственность", isEgeTop: true, title: "Восстание декабристов", description: "Вооруженное выступление дворянских революционеров на Сенатской площади в Петербурге.", figures: "Николай I, Пестель, Муравьёв, Каховский" },
+            { id: 32, year: "1861", century: "XIX", centuryGroup: "XIX", topic: "Реформы", isEgeTop: true, title: "Отмена крепостного права", description: "Император Александр II подписал Манифест об освобождении крестьян от крепостной зависимости.", figures: "Александр II Царь-Освободитель" },
+            { id: 33, year: "1905–1907", century: "XX", centuryGroup: "XX-XXI", topic: "Государственность", isEgeTop: true, title: "Первая русская революция", description: "Началась с «Кровавого воскресенья». Привела к изданию Манифеста 17 октября и созданию Государственной Думы.", figures: "Николай II, Гапон, Витте" },
+            { id: 34, year: "1917", century: "XX", centuryGroup: "XX-XXI", topic: "Государственность", isEgeTop: true, title: "Февральская и Октябрьская революции", description: "Падение самодержавия, отречение Николая II и приход к власти большевиков во главе с Лениным.", figures: "Николай II, Керенский, Ленин, Троцкий" },
+            { id: 35, year: "1941–1945", century: "XX", centuryGroup: "XX-XXI", topic: "Войны", isEgeTop: true, title: "Великая Отечественная война", description: "Война СССР против нацистской Германии и её союзников. Завершилась великой Победой.", figures: "Сталин, Жуков, Рокоссовский" },
+            { id: 36, year: "1961", century: "XX", centuryGroup: "XX-XXI", topic: "Культура", isEgeTop: true, title: "Первый полёт человека в космос", description: "Юрий Гагарин на корабле «Восток-1» совершил первый в истории человечества полёт в космос.", figures: "Юрий Гагарин, Сергей Королёв" },
+            { id: 37, year: "1991", century: "XX", centuryGroup: "XX-XXI", topic: "Государственность", isEgeTop: true, title: "Распад СССР", description: "Беловежские соглашения прекратили существование Союза ССР. Образование СНГ и суверенной РФ.", figures: "Ельцин, Горбачёв, Кравчук" },
+            // WORLD HISTORY DATES (FOR EGE TASK #2)
+            { id: 38, year: "476", century: "V", centuryGroup: "world", topic: "Всемирная", isEgeTop: true, title: "Падение Западной Римской империи", description: "Вождь германцев Одоакр сверг последнего римского императора Ромула Августула.", figures: "Одоакр, Ромул Августул" },
+            { id: 39, year: "1054", century: "XI", centuryGroup: "world", topic: "Всемирная", isEgeTop: true, title: "Раскол христианской церкви", description: "Великая схизма — разделение христианства на католицизм и православие.", figures: "Папа Лев IX, Патриарх Михаил Керуларий" },
+            { id: 40, year: "1453", century: "XV", centuryGroup: "world", topic: "Всемирная", isEgeTop: true, title: "Падение Византийской империи", description: "Захват Константинополя турками-османами под руководством султана Мехмеда II.", figures: "Мехмед II Завоеватель" },
+            { id: 41, year: "1492", century: "XV", centuryGroup: "world", topic: "Всемирная", isEgeTop: true, title: "Открытие Америки Колумбом", description: "Испанская экспедиция Христофора Колумба достигла островов Карибского моря.", figures: "Христофор Колумб" },
+            { id: 42, year: "1789", century: "XVIII", centuryGroup: "world", topic: "Всемирная", isEgeTop: true, title: "Великая французская революция", description: "Взятие Бастилии в Париже, свержение абсолютной монархии во Франции.", figures: "Людовик XVI, Робеспьер" }
+        ];
+
+        // APP STATE
+        let activeTab = 'flashcards';
+        let filteredCards = [...ALL_HISTORICAL_DATES];
+        let currentCardIndex = 0;
+        let isCardFlipped = false;
+        let cardStartMode = 'date'; // 'date' or 'event'
+        let currentCenturyFilter = 'all';
+        let currentTopicFilter = 'all';
+
+        let listMaskMode = 'none'; // 'none', 'dates', 'events'
+        let showUnlearnedOnly = false;
+
+        let learnedIds = new Set(JSON.parse(localStorage.getItem('ege_learned_ids') || '[]'));
+        let repeatIds = new Set(JSON.parse(localStorage.getItem('ege_repeat_ids') || '[]'));
+        let currentStreak = parseInt(localStorage.getItem('ege_streak') || '0');
+
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            updateFilteredDataset();
+            updateStreakDisplay();
+            renderDictionary();
+            updateStatsUI();
+
+            // Keyboard navigation listener
+            window.addEventListener('keydown', handleGlobalKeydown);
+        });
+
+        // TAB SWITCHING MECHANISM
+        function switchTab(tabName) {
+            activeTab = tabName;
+            document.querySelectorAll('.tab-section').forEach(sec => sec.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-md');
+                btn.classList.add('text-slate-400');
+            });
+
+            const targetSection = document.getElementById(`section-${tabName}`);
+            if (targetSection) targetSection.classList.remove('hidden');
+
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-md');
+                activeBtn.classList.remove('text-slate-400');
+            }
+
+            if (tabName === 'list') renderStudyList();
+            if (tabName === 'quiz') startQuizMode();
+            if (tabName === 'input') startInputMode();
+            if (tabName === 'progress') updateStatsUI();
+        }
+
+        // FILTER MECHANICS
+        function setCenturyFilter(centuryGroup) {
+            currentCenturyFilter = centuryGroup;
+            document.querySelectorAll('.century-btn').forEach(btn => {
+                if (btn.dataset.century === centuryGroup) {
+                    btn.className = 'century-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-600 text-white shadow-sm transition';
+                } else {
+                    btn.className = 'century-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition';
+                }
+            });
+            updateFilteredDataset();
+        }
+
+        function setTopicFilter(topic) {
+            currentTopicFilter = topic;
+            document.querySelectorAll('.topic-btn').forEach(btn => {
+                if (btn.dataset.topic === topic) {
+                    btn.className = 'topic-btn px-2 py-0.5 rounded-md text-[11px] bg-purple-600 text-white font-medium';
+                } else {
+                    btn.className = 'topic-btn px-2 py-0.5 rounded-md text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium';
+                }
+            });
+            updateFilteredDataset();
+        }
+
+        function toggleCardStartMode(mode) {
+            cardStartMode = mode;
+            const btnDate = document.getElementById('mode-start-date');
+            const btnEvent = document.getElementById('mode-start-event');
+            if (btnDate) {
+                btnDate.className = mode === 'date' 
+                    ? 'px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-600 text-white transition'
+                    : 'px-2 py-0.5 rounded-md text-[11px] font-medium text-slate-400 hover:text-white transition';
+            }
+            if (btnEvent) {
+                btnEvent.className = mode === 'event' 
+                    ? 'px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-600 text-white transition'
+                    : 'px-2 py-0.5 rounded-md text-[11px] font-medium text-slate-400 hover:text-white transition';
+            }
+            
+            resetCardFlip();
+            renderCurrentCard();
+        }
+
+        function updateFilteredDataset() {
+            filteredCards = ALL_HISTORICAL_DATES.filter(item => {
+                const matchesCentury = (currentCenturyFilter === 'all') || (item.centuryGroup === currentCenturyFilter);
+                const matchesTopic = (currentTopicFilter === 'all') || (item.topic === currentTopicFilter);
+                return matchesCentury && matchesTopic;
+            });
+
+            const countElem = document.getElementById('cards-selected-count');
+            if (countElem) countElem.innerText = `Выбрано: ${filteredCards.length} дат`;
+            currentCardIndex = 0;
+            resetCardFlip();
+            renderCurrentCard();
+        }
+
+        function shuffleCards() {
+            for (let i = filteredCards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [filteredCards[i], filteredCards[j]] = [filteredCards[j], filteredCards[i]];
+            }
+            currentCardIndex = 0;
+            resetCardFlip();
+            renderCurrentCard();
+        }
+
+        // 3D CARD FLIP MECHANISM
+        function flipCurrentCard() {
+            const cardInner = document.getElementById('flashcard-3d');
+            if (!cardInner) return;
+            isCardFlipped = !isCardFlipped;
+            if (isCardFlipped) {
+                cardInner.classList.add('is-flipped');
+            } else {
+                cardInner.classList.remove('is-flipped');
+            }
+        }
+
+        function resetCardFlip() {
+            isCardFlipped = false;
+            const cardInner = document.getElementById('flashcard-3d');
+            if (cardInner) cardInner.classList.remove('is-flipped');
+        }
+
+        function renderCurrentCard() {
+            const counterElem = document.getElementById('card-counter');
+            if (!filteredCards || filteredCards.length === 0) {
+                const frontMain = document.getElementById('front-main-text');
+                if (frontMain) frontMain.innerText = "Нет дат";
+                const frontSub = document.getElementById('front-sub-hint');
+                if (frontSub) frontSub.innerText = "Выберите другие фильтры";
+                if (counterElem) counterElem.innerText = "0 из 0";
+                return;
+            }
+
+            const item = filteredCards[currentCardIndex];
+            if (counterElem) counterElem.innerText = `Карточка ${currentCardIndex + 1} из ${filteredCards.length}`;
+
+            const frontMain = document.getElementById('front-main-text');
+            const frontCentury = document.getElementById('front-century-badge');
+            const frontTopic = document.getElementById('front-topic-badge');
+            const frontEge = document.getElementById('front-ege-top');
+            const frontSub = document.getElementById('front-sub-hint');
+
+            const backCentury = document.getElementById('back-century-badge');
+            const backDate = document.getElementById('back-date-badge');
+            const backTitle = document.getElementById('back-event-title');
+            const backDetails = document.getElementById('back-event-details');
+            const backFigures = document.getElementById('back-key-figures');
+
+            if (cardStartMode === 'date') {
+                if (frontCentury) frontCentury.innerText = `${item.century} ВЕК`;
+                if (frontTopic) frontTopic.innerText = item.topic;
+                if (frontEge) frontEge.style.display = item.isEgeTop ? 'inline-block' : 'none';
+                
+                if (frontMain) {
+                    frontMain.innerText = `${item.year} год`;
+                    frontMain.className = "text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-indigo-200 tracking-tight text-center";
+                }
+                if (frontSub) frontSub.innerText = 'Нажмите или Пробел, чтобы увидеть событие';
+
+                if (backCentury) backCentury.innerText = `${item.century} ВЕК`;
+                if (backDate) backDate.innerText = `${item.year} г.`;
+                if (backTitle) backTitle.innerText = item.title;
+                if (backDetails) backDetails.innerText = item.description;
+                if (backFigures) backFigures.innerHTML = item.figures ? `<i class="fa-solid fa-user-ninja mr-1 text-amber-400"></i> Личности: ${item.figures}` : '';
+            } else {
+                if (frontCentury) frontCentury.innerText = `${item.century} ВЕК`;
+                if (frontTopic) frontTopic.innerText = item.topic;
+                if (frontEge) frontEge.style.display = item.isEgeTop ? 'inline-block' : 'none';
+                
+                if (frontMain) {
+                    frontMain.innerText = item.title;
+                    frontMain.className = "text-lg sm:text-xl font-bold text-white leading-snug text-center";
+                }
+                if (frontSub) frontSub.innerText = 'Нажмите или Пробел, чтобы угадать год';
+
+                if (backCentury) backCentury.innerText = `${item.century} ВЕК`;
+                if (backDate) backDate.innerText = item.topic;
+                if (backTitle) backTitle.innerText = `${item.year} год`;
+                if (backDetails) backDetails.innerText = item.description;
+                if (backFigures) backFigures.innerHTML = item.figures ? `<i class="fa-solid fa-user-ninja mr-1 text-amber-400"></i> Личности: ${item.figures}` : '';
+            }
+        }
+
+        function nextCard() {
+            if (!filteredCards || filteredCards.length === 0) return;
+            resetCardFlip();
+            setTimeout(() => {
+                currentCardIndex = (currentCardIndex + 1) % filteredCards.length;
+                renderCurrentCard();
+            }, 150);
+        }
+
+        function prevCard() {
+            if (!filteredCards || filteredCards.length === 0) return;
+            resetCardFlip();
+            setTimeout(() => {
+                currentCardIndex = (currentCardIndex - 1 + filteredCards.length) % filteredCards.length;
+                renderCurrentCard();
+            }, 150);
+        }
+
+        function markCardKnowledge(knowsIt) {
+            if (!filteredCards || filteredCards.length === 0) return;
+            const item = filteredCards[currentCardIndex];
+
+            if (knowsIt) {
+                learnedIds.add(item.id);
+                repeatIds.delete(item.id);
+                currentStreak++;
+            } else {
+                repeatIds.add(item.id);
+                learnedIds.delete(item.id);
+                currentStreak = 0;
+            }
+
+            saveUserProgress();
+            updateStreakDisplay();
+            nextCard();
+        }
+
+        // STUDY LIST MODE LOGIC
+        function setListMaskMode(mode) {
+            listMaskMode = mode;
+            const btnNone = document.getElementById('mask-btn-none');
+            const btnDates = document.getElementById('mask-btn-dates');
+            const btnEvents = document.getElementById('mask-btn-events');
+
+            if (btnNone) {
+                btnNone.className = mode === 'none' 
+                    ? 'px-2.5 py-1 rounded-lg font-medium bg-indigo-600 text-white transition' 
+                    : 'px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition';
+            }
+            if (btnDates) {
+                btnDates.className = mode === 'dates' 
+                    ? 'px-2.5 py-1 rounded-lg font-medium bg-indigo-600 text-white transition' 
+                    : 'px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition';
+            }
+            if (btnEvents) {
+                btnEvents.className = mode === 'events' 
+                    ? 'px-2.5 py-1 rounded-lg font-medium bg-indigo-600 text-white transition' 
+                    : 'px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition';
+            }
+            renderStudyList();
+        }
+
+        function toggleUnlearnedOnly() {
+            showUnlearnedOnly = !showUnlearnedOnly;
+            const btn = document.getElementById('unlearned-only-btn');
+            if (btn) {
+                if (showUnlearnedOnly) {
+                    btn.className = 'px-3 py-2 rounded-xl text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/40 transition whitespace-nowrap';
+                    btn.innerHTML = '<i class="fa-solid fa-square-check mr-1.5"></i> Только невыученные';
+                } else {
+                    btn.className = 'px-3 py-2 rounded-xl text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition whitespace-nowrap';
+                    btn.innerHTML = '<i class="fa-regular fa-square mr-1.5"></i> Только невыученные';
+                }
+            }
+            renderStudyList();
+        }
+
+        function toggleItemLearned(id, event) {
+            if (event) event.stopPropagation();
+            if (learnedIds.has(id)) {
+                learnedIds.delete(id);
+            } else {
+                learnedIds.add(id);
+                repeatIds.delete(id);
+            }
+            saveUserProgress();
+            renderStudyList();
+            renderDictionary();
+        }
+
+        function renderStudyList() {
+            const container = document.getElementById('study-list-container');
+            if (!container) return;
+
+            const searchQuery = (document.getElementById('list-search-input')?.value || '').toLowerCase();
+            const centuryVal = document.getElementById('list-century-select')?.value || 'all';
+
+            const filtered = ALL_HISTORICAL_DATES.filter(item => {
+                const matchesCentury = (centuryVal === 'all') || (item.centuryGroup === centuryVal);
+                const matchesSearch = item.year.toLowerCase().includes(searchQuery) ||
+                                      item.title.toLowerCase().includes(searchQuery) ||
+                                      (item.figures && item.figures.toLowerCase().includes(searchQuery));
+                const matchesUnlearned = !showUnlearnedOnly || !learnedIds.has(item.id);
+
+                return matchesCentury && matchesSearch && matchesUnlearned;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="glass-panel p-8 text-center rounded-2xl text-slate-400">
+                        <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-500"></i>
+                        <p class="text-sm font-medium">Ничего не найдено по вашему запросу</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => {
+                const isLearned = learnedIds.has(item.id);
+
+                let dateDisplay = `<span class="text-lg font-bold text-white">${item.year} г.</span>`;
+                if (listMaskMode === 'dates') {
+                    dateDisplay = `
+                        <button onclick="this.outerHTML='<span class=\\'text-lg font-bold text-emerald-400\\'>${item.year} г.</span>'" 
+                            class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-semibold rounded-lg border border-slate-700 transition">
+                            <i class="fa-solid fa-eye mr-1"></i> Показать дату
+                        </button>`;
+                }
+
+                let eventDisplay = `
+                    <h3 class="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">${item.title}</h3>
+                    <p class="text-xs text-slate-300 mt-1 leading-relaxed">${item.description}</p>
+                `;
+                if (listMaskMode === 'events') {
+                    eventDisplay = `
+                        <button onclick="this.outerHTML='<h3 class=\\'text-base font-bold text-amber-300 mb-1\\'>${item.title}</h3><p class=\\'text-xs text-slate-300 leading-relaxed\\'>${item.description}</p>'" 
+                            class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-semibold rounded-lg border border-slate-700 transition">
+                            <i class="fa-solid fa-eye mr-1"></i> Показать событие
+                        </button>`;
+                }
+
+                return `
+                    <div class="glass-panel p-4 rounded-xl border border-slate-800 hover:border-slate-700 transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group ${isLearned ? 'bg-slate-900/40 opacity-80' : ''}">
+                        <div class="flex items-start sm:items-center space-x-4 w-full sm:w-auto">
+                            <!-- Checkbox for Learned state -->
+                            <button onclick="toggleItemLearned(${item.id}, event)" title="${isLearned ? 'Отметить как невыученную' : 'Отметить как выученную'}"
+                                class="mt-1 sm:mt-0 w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${isLearned ? 'bg-emerald-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/20' : 'border-slate-700 bg-slate-800/80 text-transparent hover:border-indigo-500 hover:text-indigo-400'}">
+                                <i class="fa-solid fa-check text-xs"></i>
+                            </button>
+
+                            <!-- Date Column -->
+                            <div class="min-w-[100px] flex flex-col">
+                                ${dateDisplay}
+                                <span class="text-[11px] text-indigo-400 font-medium">${item.century} век</span>
+                            </div>
+
+                            <!-- Content Column -->
+                            <div class="flex-1">
+                                ${eventDisplay}
+                                <div class="flex flex-wrap items-center gap-2 mt-2">
+                                    <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/60">${item.topic}</span>
+                                    ${item.isEgeTop ? '<span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">★ ЕГЭ ТОП</span>' : ''}
+                                    ${item.figures ? `<span class="text-[10px] text-slate-400"><i class="fa-solid fa-user-ninja text-amber-400/80 mr-1"></i>${item.figures}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleGlobalKeydown(e) {
+            if (activeTab !== 'flashcards') return;
+
+            if (e.code === 'Space') {
+                e.preventDefault();
+                flipCurrentCard();
+            } else if (e.code === 'ArrowRight' || e.key === '2') {
+                e.preventDefault();
+                markCardKnowledge(true);
+            } else if (e.code === 'ArrowLeft' || e.key === '1') {
+                e.preventDefault();
+                markCardKnowledge(false);
+            }
+        }
+
+        // QUIZ MODE ENGINE
+        let currentQuizItem = null;
+        let quizScore = 0;
+        let quizTotal = 0;
+
+        function startQuizMode() {
+            quizNextQuestion();
+        }
+
+        function quizNextQuestion() {
+            const randomItem = ALL_HISTORICAL_DATES[Math.floor(Math.random() * ALL_HISTORICAL_DATES.length)];
+            currentQuizItem = randomItem;
+
+            const tagEl = document.getElementById('quiz-century-tag');
+            const questionEl = document.getElementById('quiz-question-text');
+            const nextBtn = document.getElementById('quiz-next-btn');
+
+            if (tagEl) tagEl.innerText = `${randomItem.century} ВЕК`;
+            if (questionEl) questionEl.innerText = randomItem.title;
+            if (nextBtn) nextBtn.classList.add('hidden');
+
+            const wrongOptions = ALL_HISTORICAL_DATES
+                .filter(d => d.id !== randomItem.id)
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 3)
+                .map(d => d.year);
+
+            const options = [randomItem.year, ...wrongOptions].sort(() => 0.5 - Math.random());
+
+            const optionsContainer = document.getElementById('quiz-options-grid');
+            if (optionsContainer) {
+                optionsContainer.innerHTML = '';
+                options.forEach(optYear => {
+                    const btn = document.createElement('button');
+                    btn.className = 'p-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-center text-lg transition active:scale-95';
+                    btn.innerText = `${optYear} г.`;
+                    btn.onclick = () => checkQuizAnswer(optYear, btn);
+                    optionsContainer.appendChild(btn);
+                });
+            }
+        }
+
+        function checkQuizAnswer(selectedYear, buttonEl) {
+            const allBtns = document.querySelectorAll('#quiz-options-grid button');
+            allBtns.forEach(btn => btn.disabled = true);
+
+            quizTotal++;
+            if (selectedYear === currentQuizItem.year) {
+                buttonEl.className = 'p-4 rounded-xl bg-emerald-600 border border-emerald-400 text-white font-bold text-center text-lg shadow-lg';
+                quizScore++;
+            } else {
+                buttonEl.className = 'p-4 rounded-xl bg-rose-600 border border-rose-400 text-white font-bold text-center text-lg shadow-lg';
+                allBtns.forEach(btn => {
+                    if (btn.innerText.includes(currentQuizItem.year)) {
+                        btn.className = 'p-4 rounded-xl bg-emerald-600/80 border border-emerald-400 text-white font-bold text-center text-lg';
+                    }
+                });
+            }
+
+            const scoreEl = document.getElementById('quiz-score');
+            const nextBtn = document.getElementById('quiz-next-btn');
+            if (scoreEl) scoreEl.innerText = `${quizScore} / ${quizTotal}`;
+            if (nextBtn) nextBtn.classList.remove('hidden');
+        }
+
+        function nextQuizQuestion() {
+            startQuizMode();
+        }
+
+        // INPUT MODE ENGINE
+        let currentInputItem = null;
+
+        function startInputMode() {
+            currentInputItem = ALL_HISTORICAL_DATES[Math.floor(Math.random() * ALL_HISTORICAL_DATES.length)];
+            const catTag = document.getElementById('input-category-tag');
+            const eventText = document.getElementById('input-event-text');
+            const userInput = document.getElementById('user-date-input');
+            const feedback = document.getElementById('input-feedback');
+
+            if (catTag) catTag.innerText = `${currentInputItem.century} ВЕК • ${currentInputItem.topic}`;
+            if (eventText) eventText.innerText = currentInputItem.title;
+            if (userInput) {
+                userInput.value = '';
+                userInput.focus();
+            }
+            if (feedback) feedback.className = 'hidden';
+        }
+
+        function handleInputSubmit(e) {
+            e.preventDefault();
+            const userInput = document.getElementById('user-date-input');
+            const feedback = document.getElementById('input-feedback');
+            if (!userInput || !feedback) return;
+
+            const val = userInput.value.trim();
+            if (!val) return;
+
+            const cleanAnswer = currentInputItem.year.replace(/\s+/g, '');
+            const cleanUser = val.replace(/\s+/g, '');
+
+            if (cleanUser === cleanAnswer || currentInputItem.year.includes(val)) {
+                feedback.className = 'p-4 rounded-xl text-center text-sm font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 block';
+                feedback.innerHTML = `<i class="fa-solid fa-circle-check mr-2"></i> Верно! Год: <strong>${currentInputItem.year}</strong>`;
+                setTimeout(startInputMode, 1500);
+            } else {
+                feedback.className = 'p-4 rounded-xl text-center text-sm font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30 block';
+                feedback.innerHTML = `<i class="fa-solid fa-circle-xmark mr-2"></i> Неверно. Правильная дата: <strong>${currentInputItem.year} год</strong>`;
+            }
+        }
+
+        function showInputHint() {
+            const feedback = document.getElementById('input-feedback');
+            if (!feedback || !currentInputItem) return;
+            feedback.className = 'p-3 rounded-xl text-center text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30 block';
+            feedback.innerText = `Подсказка: Событие относится к ${currentInputItem.century} веку (${currentInputItem.figures ? 'Личности: ' + currentInputItem.figures : 'Без конкретных личностей'})`;
+        }
+
+        // DICTIONARY
+        function renderDictionary() {
+            const query = (document.getElementById('dict-search')?.value || '').toLowerCase();
+            const tbody = document.getElementById('dictionary-table-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            const filtered = ALL_HISTORICAL_DATES.filter(item => {
+                return item.year.toLowerCase().includes(query) ||
+                       item.title.toLowerCase().includes(query) ||
+                       item.description.toLowerCase().includes(query);
+            });
+
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/50 transition';
+
+                const isLearned = learnedIds.has(item.id);
+                const statusBadge = isLearned 
+                    ? '<span class="text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i>Выучено</span>'
+                    : '<span class="text-slate-500">Не выучено</span>';
+
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-white">${item.year}</td>
+                    <td class="p-3 text-indigo-300">${item.century} век</td>
+                    <td class="p-3">
+                        <div class="font-semibold text-slate-200">${item.title}</div>
+                        <div class="text-[11px] text-slate-400">${item.description}</div>
+                    </td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">${item.topic}</span></td>
+                    <td class="p-3">${statusBadge}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // STATS & PROGRESS
+        function updateStatsUI() {
+            const learnedElem = document.getElementById('stat-learned-count');
+            const repeatElem = document.getElementById('stat-repeat-count');
+            const accuracyElem = document.getElementById('stat-accuracy');
+
+            if (learnedElem) learnedElem.innerText = learnedIds.size;
+            if (repeatElem) repeatElem.innerText = repeatIds.size;
+            if (accuracyElem) {
+                const accuracy = Math.round((learnedIds.size / ALL_HISTORICAL_DATES.length) * 100);
+                accuracyElem.innerText = `${accuracy}%`;
+            }
+        }
+
+        function updateStreakDisplay() {
+            const streakElem = document.getElementById('streak-counter');
+            if (streakElem) streakElem.innerText = currentStreak;
+        }
+
+        function saveUserProgress() {
+            localStorage.setItem('ege_learned_ids', JSON.stringify(Array.from(learnedIds)));
+            localStorage.setItem('ege_repeat_ids', JSON.stringify(Array.from(repeatIds)));
+            localStorage.setItem('ege_streak', currentStreak.toString());
+            updateStatsUI();
+        }
+
+        function resetAllProgress() {
+            learnedIds.clear();
+            repeatIds.clear();
+            currentStreak = 0;
+            saveUserProgress();
+            updateStreakDisplay();
+            renderDictionary();
+            renderStudyList();
+        }
+    </script>
+</body>
+</html>
